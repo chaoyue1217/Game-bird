@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/FB.js"></script>
+    <script src="js/bird.js"></script>
+    <script src="js/sky.js"></script>
+    <script src="js/land.js"></script>
+    <script src="js/pipe.js"></script>
+</head>
+<body>
+<canvas id="cas" style="border: 1px solid blue;" width=800 height=600></canvas>
+<script>
+    var cas = document.getElementById("cas");
+    var ctx = cas.getContext("2d");
+    var currentTime = 0;
+    var lastTime = new Date();
+    var deltaTime = 0;
+    var arr = ["birds", "sky", "land", "pipe1", "pipe2"];
+    var isRunning = true;
+    FB.loadImages(arr, function (imgs) {
+        var roles = [];
+        //绘制天空
+        for (var i = 0; i < 2; i++) {
+            var sky = new FB.Sky({
+                ctx: ctx,
+                img: imgs["sky"],
+                x: imgs["sky"].width * i,
+                y: 0,
+                speed: 3
+            });
+            roles.push(sky);
+        }
+
+        //绘制管子
+        for(var i=0;i<6;i++){
+            var land = new FB.Pipe({
+                ctx: ctx,
+                topImg: imgs["pipe2"],
+                bottomImg: imgs["pipe1"],
+                x: imgs["pipe1"].width*3 * i+300,
+                speed: 2
+            });
+            roles.push(land);
+        }
+        //绘制陆地
+        for (var i = 0; i < 4; i++) {
+            var land = new FB.Land({
+                ctx: ctx,
+                img: imgs["land"],
+                x: imgs["land"].width * i,
+                y: cas.height - imgs["land"].height,
+                speed: 3
+            });
+            roles.push(land);
+        }
+
+
+        var bird = new FB.Bird({
+            ctx: ctx,
+            img: imgs['birds'],
+            x: 100,
+            y: 100,
+            speed: 0
+        });
+        var hero = bird;
+        function render() {
+            // 清空画布
+            ctx.clearRect(0, 0, cas.width, cas.height);
+            // 计算相关时间
+            currentTime = new Date();
+            deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            //路径和不能清空，但是重新开始路径后就可以清空了
+            //画完一组一清空，在移动的时候就不会有重叠了，因为前面的路径已经清空了
+            ctx.beginPath();
+            roles.forEach(function (item) {
+                item.draw();
+            });
+            bird.draw(deltaTime);
+            //碰撞检测
+            if(ctx.isPointInPath(hero.x+hero.perWidth*2/3,hero.y+hero.perHeight/3)){
+                isRunning = false;
+            }
+            //触顶和触底检测
+            if(hero.y+hero.perHeight*2/3>=cas.height-imgs["land"].height||hero.y<=0-hero.perHeight/3){
+                isRunning = false;
+            }
+            if(isRunning){
+                requestAnimationFrame(render);
+            }
+        }
+
+        render();
+        cas.onclick = function () {
+            bird.speed = -0.3;
+        };
+
+    });
+</script>
+</body>
+</html>
